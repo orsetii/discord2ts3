@@ -97,8 +97,8 @@ func tsInit() {
 			time.Sleep(time.Second)
 			// If Channel empty
 			var retString string = "```"
-			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t", "Name", "AFK")
-			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t\n", "----", "----")
+			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t", "Name", "AFK")
+			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t\n", "----", "----")
 
 			if len(TsStateInfo) == 0 {
 				clientList, err := Client.GetClientList(Ctx)
