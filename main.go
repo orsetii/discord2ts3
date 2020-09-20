@@ -97,8 +97,8 @@ func tsInit() {
 			time.Sleep(time.Second)
 			// If Channel empty
 			var retString string
-			retString += fmt.Sprintf("\n %s\t\t\t%s\t", "Name", "AFK")
-			retString += fmt.Sprintf("\n %s\t\t\t%s\t", "----", "----")
+			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t", "Name", "Time Connected")
+			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t\n", "----", "----")
 
 			if len(TsStateInfo) == 0 {
 				clientList, err := Client.GetClientList(Ctx)
@@ -111,8 +111,8 @@ func tsInit() {
 					if err != nil {
 						continue
 					}
-					retString += fmt.Sprintf("\n %s", clientInfo.Nickname)
-					retString += fmt.Sprintf("\r\t\t\t\t%d", clientInfo.ClientIdleTime)
+					retString += fmt.Sprintf("%s", clientInfo.Nickname)
+					retString += fmt.Sprintf("\r\t\t\t\t%d\n", clientInfo.ClientIdleTime)
 				}
 				fmt.Printf("%s", retString)
 				TsStateInfo <- retString
