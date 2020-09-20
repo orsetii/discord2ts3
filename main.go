@@ -97,7 +97,7 @@ func tsInit() {
 			time.Sleep(time.Second)
 			// If Channel empty
 			var retString string = "```"
-			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t", "Name", "Time Connected")
+			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t", "Name", "AFK")
 			retString += fmt.Sprintf("\n %s\t\t\t\t%s\t\n", "----", "----")
 
 			if len(TsStateInfo) == 0 {
@@ -112,7 +112,11 @@ func tsInit() {
 						continue
 					}
 					retString += fmt.Sprintf(" %s", clientInfo.Nickname)
-					retString += fmt.Sprintf("\r     \t\t\t\t%d\n", clientInfo.ClientIdleTime)
+					var isIdle string = "No"
+					if clientInfo.ClientIdleTime > 30000 {
+						isIdle = "Yes"
+					}
+					retString += fmt.Sprintf(" \t\t\t\t%s\n", isIdle)
 				}
 				retString += "```"
 				fmt.Printf("%s", retString)
