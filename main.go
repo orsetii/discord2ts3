@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -100,6 +101,7 @@ func tsInit() {
 			// If Channel empty
 			w := new(tabwriter.Writer)
 			buf := new(bytes.Buffer)
+			_ = io.Writer(buf)
 			w.Init(buf, 8, 8, 0, '\t', 0)
 
 			defer w.Flush()
@@ -111,6 +113,7 @@ func tsInit() {
 				if err != nil {
 					continue
 				}
+
 				for _, clientSummary := range clientList {
 					clientInfo, err := Client.GetClientInfo(Ctx, clientSummary.Id)
 					if err != nil {
@@ -120,7 +123,9 @@ func tsInit() {
 					fmt.Fprintf(w, "\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 			}
+			fmt.Printf("%#v\n%#v", buf.Len(), buf.String())
 			TsStateInfo <- buf.String()
+
 		}
 	}()
 	fmt.Printf("Waiting for events.\n")
