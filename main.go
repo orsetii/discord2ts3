@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"text/tabwriter"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -97,15 +96,9 @@ func tsInit() {
 		for {
 			time.Sleep(time.Second * 1)
 			// If Channel empty
-			w := new(tabwriter.Writer)
-			//buf := new(bytes.Buffer)
-
-			w.Init(os.Stdout, 8, 8, 0, '\t', 0) // Test writing to stdout
-
-			defer w.Flush()
-
-			fmt.Fprintf(w, "\n %s\t%s\t", "Name", "AFK")
-			fmt.Fprintf(w, "\n %s\t%s\t", "----", "----")
+			var retString string
+			retString += fmt.Sprintf("\n %s\t%s\t", "Name", "AFK")
+			retString += fmt.Sprintf("\n %s\t%s\t", "----", "----")
 
 			if len(TsStateInfo) == 0 {
 				clientList, err := Client.GetClientList(Ctx)
@@ -119,9 +112,10 @@ func tsInit() {
 						continue
 					}
 					dat, _ = json.Marshal(clientInfo)
-					fmt.Fprintf(w, "\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
+					retString += fmt.Sprintf("\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 			}
+			fmt.Printf("%#v", retString)
 			//TsStateInfo <- buf.String()
 
 		}
