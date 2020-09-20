@@ -188,7 +188,8 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
 	default:
 		// TODO here is ALL messages that dont have a command associated with them.
-		Client.SendTextMessage(Ctx, 2, 1, `test\syoyo\sEND`)
+		err := Client.SendTextMessage(Ctx, 2, 1, "hello")
+		checkErr(err)
 		return
 	}
 
