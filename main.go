@@ -97,8 +97,8 @@ func tsInit() {
 			time.Sleep(time.Second * 1)
 			// If Channel empty
 			var retString string
-			retString += fmt.Sprintf("\n %s\t%s\t", "Name", "AFK")
-			retString += fmt.Sprintf("\n %s\t%s\t", "----", "----")
+			retString += fmt.Sprintf("\n %s\t\t\t%s\t", "Name", "AFK")
+			retString += fmt.Sprintf("\n %s\t\t\t%s\t", "----", "----")
 
 			if len(TsStateInfo) == 0 {
 				clientList, err := Client.GetClientList(Ctx)
@@ -112,7 +112,7 @@ func tsInit() {
 						continue
 					}
 					dat, _ = json.Marshal(clientInfo)
-					retString += fmt.Sprintf("\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
+					retString += fmt.Sprintf("\n %s\t\t\t%d", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 				fmt.Printf("%s", retString)
 				TsStateInfo <- retString
@@ -174,8 +174,7 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "tsinfo":
 		fallthrough
 	case "!tsinfo":
-		fmt.Printf("\n\n%s\n", <-TsStateInfo)
-		//s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
+		s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
 	default:
 		// TODO here is ALL messages that dont have a command associated with them.
 		return
