@@ -14,14 +14,14 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/orsetii/discord2ts3/data"
 	ts3 "github.com/paralin/ts3-go/serverquery"
 	"github.com/urfave/cli"
 )
 
 const (
-	tsUser        = "serveradmin"
-	tsPass        = "s0h6sfj1"
-	discAuthToken = "NzU3MjcyMjUzNjQ4ODYzNDM0.X2d-vg.memWkum4D2UNacW1-xPYREiYioI"
+	tsUser = "serveradmin"
+	tsPass = "s0h6sfj1"
 )
 
 var (
@@ -39,7 +39,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "discord2ts3"
 	app.Action = func(c *cli.Context) {
-		discord, err := discordgo.New("Bot " + discAuthToken)
+		discord, err := discordgo.New("Bot " + data.DiscAuthToken)
 		checkErr(err)
 
 		wg.Add(1)
