@@ -116,13 +116,13 @@ func tsInit() {
 						isIdle = "Yes"
 					}
 					var fmtNick = clientInfo.Nickname
-					if len(fmtNick) > 16 {
-						diff := len(fmtNick) - 13
-						fmtNick = fmtNick[:diff] + "..."
+					if nickLen := len(fmtNick); nickLen > 16 {
+						nickLen -= nickLen - 19
+						fmtNick = fmtNick[:nickLen] + "..."
 					}
-					var row string // NExt row to print
+					var row string // Next row to print
 					row += fmt.Sprintf(" %-16s", fmtNick)
-					row += fmt.Sprintf(" \t\t\t\t%s\n", isIdle)
+					row += fmt.Sprintf("%s\n", isIdle)
 					retString += row
 				}
 				retString += "```"
