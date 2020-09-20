@@ -114,10 +114,9 @@ func tsInit() {
 					dat, _ = json.Marshal(clientInfo)
 					retString += fmt.Sprintf("\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
+				fmt.Printf("%s", retString)
+				TsStateInfo <- retString
 			}
-			fmt.Printf("%s", retString)
-			TsStateInfo <- retString
-
 		}
 	}()
 	fmt.Printf("Waiting for events.\n")
