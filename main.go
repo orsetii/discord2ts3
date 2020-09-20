@@ -94,7 +94,7 @@ func tsInit() {
 	}
 	go func() {
 		for {
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Second)
 			// If Channel empty
 			var retString string
 			retString += fmt.Sprintf("\n %s\t\t\t%s\t", "Name", "AFK")
@@ -111,8 +111,8 @@ func tsInit() {
 					if err != nil {
 						continue
 					}
-					dat, _ = json.Marshal(clientInfo)
-					retString += fmt.Sprintf("\n %s\t\t\t%d", clientInfo.Nickname, clientInfo.ClientIdleTime)
+					retString += fmt.Sprintf("\n %s", clientInfo.Nickname)
+					retString += fmt.Sprintf("\r\t\t\t\t%d", clientInfo.ClientIdleTime)
 				}
 				fmt.Printf("%s", retString)
 				TsStateInfo <- retString
