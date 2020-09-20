@@ -111,12 +111,19 @@ func tsInit() {
 					if err != nil {
 						continue
 					}
-					retString += fmt.Sprintf(" %s", clientInfo.Nickname)
 					var isIdle string = "No"
 					if clientInfo.ClientIdleTime > 30000 {
 						isIdle = "Yes"
 					}
-					retString += fmt.Sprintf(" \t\t\t\t%s\n", isIdle)
+					var fmtNick = clientInfo.Nickname
+					if len(fmtNick) > 16 {
+						diff := len(fmtNick) - 13
+						fmtNick = fmtNick[:diff] + "..."
+					}
+					var row string // NExt row to print
+					row += fmt.Sprintf(" %-16s", fmtNick)
+					row += fmt.Sprintf(" \t\t\t\t%s\n", isIdle)
+					retString += row
 				}
 				retString += "```"
 				fmt.Printf("%s", retString)
