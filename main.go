@@ -117,8 +117,7 @@ func tsInit() {
 					}
 					var fmtNick = clientInfo.Nickname
 					if nickLen := len(fmtNick); nickLen > 15 {
-						nickLen -= nickLen - 19
-						fmtNick = fmtNick[:nickLen] + "..."
+						fmtNick = fmtNick[:12] + "..."
 					}
 					var row string // Next row to print
 					row += fmt.Sprintf(" %-16s", fmtNick)
