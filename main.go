@@ -101,8 +101,8 @@ func tsInit() {
 			// If Channel empty
 			w := new(tabwriter.Writer)
 			buf := new(bytes.Buffer)
-			_ = io.Writer(buf)
-			w.Init(buf, 8, 8, 0, '\t', 0)
+			bufWriter := io.Writer(buf)
+			w.Init(bufWriter, 8, 8, 0, '\t', 0)
 
 			defer w.Flush()
 
