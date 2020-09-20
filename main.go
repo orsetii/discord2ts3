@@ -115,6 +115,7 @@ func tsInit() {
 					retString += fmt.Sprintf("\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 			}
+			fmt.Printf("%s", retString)
 			TsStateInfo <- retString
 
 		}
