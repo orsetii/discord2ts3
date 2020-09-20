@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -100,14 +98,15 @@ func tsInit() {
 			time.Sleep(time.Second * 1)
 			// If Channel empty
 			w := new(tabwriter.Writer)
-			buf := new(bytes.Buffer)
-			bufWriter := io.Writer(buf)
-			w.Init(bufWriter, 8, 8, 0, '\t', 0)
+			//buf := new(bytes.Buffer)
+
+			w.Init(os.Stdout, 8, 8, 0, '\t', 0) // Test writing to stdout
 
 			defer w.Flush()
 
 			fmt.Fprintf(w, "\n %s\t%s\t", "Name", "AFK")
 			fmt.Fprintf(w, "\n %s\t%s\t", "----", "----")
+
 			if len(TsStateInfo) == 0 {
 				clientList, err := Client.GetClientList(Ctx)
 				if err != nil {
@@ -123,8 +122,7 @@ func tsInit() {
 					fmt.Fprintf(w, "\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 			}
-			fmt.Printf("%#v\n%#v", buf.Len(), buf.String())
-			TsStateInfo <- buf.String()
+			//TsStateInfo <- buf.String()
 
 		}
 	}()
