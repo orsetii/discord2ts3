@@ -57,7 +57,7 @@ func main() {
 	app.RunAndExitOnError()
 }
 func tsConn() (*ts3.ServerQueryAPI, error) {
-	return ts3.Dial("orseti.com:10011")
+	return ts3.Dial(data.Addr)
 }
 
 func tsInit() {
@@ -144,7 +144,7 @@ func discInit(dg *discordgo.Session) {
 	// Open a websocket connection to Discord and begin listening.
 	err := dg.Open()
 	if err != nil {
-		fmt.Println("error opening connection,", err)
+		fmt.Println("error opening connection. Error:", err)
 		return
 	}
 
