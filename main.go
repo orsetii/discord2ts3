@@ -188,13 +188,41 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
 	default:
 		// TODO here is ALL messages that dont have a command associated with them.
-		//_, err := Client.ExecuteCommand(Ctx, &ts3.SendTextMessageCommand{TargetMode: 3, Target: 1, Message: m.Content})
-		err := Client.SendTextMessage(Ctx, 2, 1, "hello")
+		_, err := Client.ExecuteCommand(Ctx, &ts3.UseCommand()
+		err := Client.SendTextMessage(Ctx, 1, 0, "hello")
+		a := new(ts3.ServerQueryReadWriter)
 		checkErr(err)
 		return
 	}
 
 }
+
+
+// UseCommand is the use command.
+type UseCommand struct {
+	// Port is the server to use.
+	Port int `serverquery:"port"`
+}
+
+// GetResponseType returns an instance of the response type.
+func (c *UseCommand) GetResponseType() interface{} {
+	return nil
+}
+
+// GetCommandName returns the name of the command.
+func (c *UseCommand) GetCommandName() string {
+	return "use"
+}
+
+
+
+
+
+
+
+
+
+
 
 func checkErr(err error) {
 	if err != nil {
