@@ -115,8 +115,7 @@ func tsInit() {
 					retString += fmt.Sprintf("\n %s\t%d\t", clientInfo.Nickname, clientInfo.ClientIdleTime)
 				}
 			}
-			fmt.Printf("%#v", retString)
-			//TsStateInfo <- buf.String()
+			TsStateInfo <- retString
 
 		}
 	}()
@@ -175,7 +174,7 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "tsinfo":
 		fallthrough
 	case "!tsinfo":
-		fmt.Printf("\n\n%#v\n", <-TsStateInfo)
+		fmt.Printf("\n\n%s\n", <-TsStateInfo)
 		//s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
 	default:
 		// TODO here is ALL messages that dont have a command associated with them.
