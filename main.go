@@ -172,7 +172,7 @@ func discTsInfo() string {
 		case clientInfo.OutputMuted:
 			isMuted = "🔇"
 		case clientInfo.InputMuted:
-			isMuted = "Mic"
+			isMuted = "🎤"
 		default:
 			if clientInfo.IsTalker {
 				isMuted = "🔊 Speaking now"
@@ -242,7 +242,6 @@ func tsPoke(user, pass, toPoke, msg string) error { // TODO cut out the !poke an
 							log.Printf("Errored Finding ID at main.go:253\nError msg: %s", err)
 						}
 						log.Printf("Found user %s with ID %d", personClientInfo.Nickname, ToPokeID)
-
 					}
 					if err != nil {
 						return err
