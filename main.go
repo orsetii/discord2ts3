@@ -116,11 +116,10 @@ func tsInit(dg *discordgo.Session) {
 
 		err := tsToDiscSend(dg, tsSender, tsMsg.String())
 		if err != nil {
-			log.Println(err)
+			log.Printf("Error in relaying ts message to discord: %s", err)
 			continue
 		}
-		fmt.Printf("reflect: %v\n", v.FieldByIndex([]int{1}))
-		fmt.Printf("message: %v\n", event) //  Example output: event: &serverquery.TextMessageReceived{TargetMode:2, Message:"a", TargetID:0, InvokerID:253, InvokerName:"orseti", InvokerUID:"Kb9cMhGIapfej2uj0r6GrSF64aQ="}
+		fmt.Printf("reflect: %s\n", v.FieldByIndex([]int{1}))
 	}
 }
 
