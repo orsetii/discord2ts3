@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/multiplay/go-ts3"
@@ -67,8 +67,8 @@ func tsSend(user, pass, msg string) error {
 	client.Use(1)
 	client.Login(user, pass)
 	sendTextMessage := ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", msg))
-	ret, err := client.ExecCmd(sendTextMessage)
-	fmt.Printf("\nALERT:\n%v\n%v\n", ret, err)
+	_, err = client.ExecCmd(sendTextMessage)
+	log.Printf("\nText Message Sent to Teamspeak from Discord. Message Content: %s", msg)
 	client.Logout()
 	return err
 }
@@ -96,27 +96,14 @@ func tsInit(dg *discordgo.Session) {
 	if err := Client.Login(Ctx, tsUser, tsPass); err != nil {
 		checkErr(err)
 	}
-
-	channelList, err := Client.GetChannelList(Ctx)
-	if err != nil {
-		checkErr(err)
-	}
-	dat, _ := json.Marshal(channelList)
-	fmt.Printf("channel list: %#v\n", string(dat))
-	for _, channelSummary := range channelList {
-		channelInfo, err := Client.GetChannelInfo(Ctx, channelSummary.Id)
-		if err != nil {
-			checkErr(err)
-		}
-		dat, _ = json.Marshal(channelInfo)
-		fmt.Printf("channel [%d]: %#v\n", channelSummary.Id, string(dat))
-	}
-	fmt.Printf("Waiting for events.\n")
+	fmt.Println("Waiting...")
 	//if err := Client.ServerNotifyRegisterAll(Ctx); err != nil {
 	//	checkErr(err)
 	//}
 	err = Client.ServerNotifyRegister(Ctx, "textchannel", 1)
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
 	events := Client.Events()
 	for event := range events {
 		v := reflect.ValueOf(event).Elem()
@@ -240,12 +227,23 @@ func tsPoke(user, pass, toPoke, msg string) error { // TODO cut out the !poke an
 			for _, personClientInfo := range clientList {
 				if person.Nickname == personClientInfo.Nickname { // If we DO have a match between dbinfo and clientinfo
 					getCLID := ts3.NewCmd("clientgetids ").WithArgs(ts3.NewArg("cluid", person.UniqueIdentifier))
-					ret, err := client.ExecCmd(getCLID)
+					recList, err := client.ExecCmd(getCLID)
 					if err != nil {
 						return err
 					}
+					ret := recList[0]
 					startOfClid := len(person.UniqueIdentifier) + 12
-					ToPokeID, err := strconv.Atoi(ret[0][startOfClid : startOfClid+3])
+					ToPokeID, err := strconv.Atoi(ret[startOfClid : startOfClid+3])
+					if ToPokeID == 0 {
+						// Remove all including 'clid=' 5 chars
+						preToPokeID := strings.Split(ret, " ")[1]
+						ToPokeID, err = strconv.Atoi(preToPokeID[5:])
+						if err != nil {
+							log.Printf("Errored Finding ID at main.go:253\nError msg: %s", err)
+						}
+						log.Printf("Found user %s with ID %d", personClientInfo.Nickname, ToPokeID)
+
+					}
 					if err != nil {
 						return err
 					}
@@ -257,8 +255,8 @@ func tsPoke(user, pass, toPoke, msg string) error { // TODO cut out the !poke an
 	}
 	msg = user[1:] + " poked you from discord: " + msg
 	sendPoke := ts3.NewCmd("clientpoke ").WithArgs(ts3.NewArg("clid", <-ChanToPoke), ts3.NewArg("msg", msg))
-	ret, err := client.ExecCmd(sendPoke)
-	fmt.Printf("\nPOKED:\n%v\n%v\n", ret, err)
+	_, err = client.ExecCmd(sendPoke)
+	fmt.Printf("User %s sent poke.\n", user[1:])
 	client.Logout()
 	return err
 }
@@ -304,7 +302,12 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 			tsPoke(senderName, senderPass, msg[1], "")
 			return
 		}
-		tsPoke(senderName, senderPass, msg[1], msg[2])
+		log.Printf("Poking User: %s from User: %s...", msg[1], senderName[1:])
+		if err := tsPoke(senderName, senderPass, msg[1], msg[2]); err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println("No error reported.")
 		return
 	}
 	if strings.Contains(m.Content, "!fuckyou") {
@@ -312,12 +315,13 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		senderPass := data.SQData[senderName]
 		msg := strings.Split(m.Content, " ")
 		for i := 0; i < 20; i++ {
+			time.Sleep(time.Millisecond * 200)
 			if len(msg) < 3 {
 				tsPoke(senderName, senderPass, msg[1], "")
-				return
+				continue
 			}
 			tsPoke(senderName, senderPass, msg[1], msg[2])
-			return
+			continue
 		}
 	}
 	switch m.Content {
