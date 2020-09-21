@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/multiplay/go-ts3"
@@ -33,7 +32,7 @@ var (
 	//Client is the global sq client interface
 	Client *sq.ServerQueryAPI
 	//TsStateInfo is a channel used to monitor who is in discord when called.
-	TsStateInfo = make(chan string, 10)
+	TsStateInfo = make(chan string, 1)
 	// MsgCmd is a TS command to send message. Able to specify message but user needs to be done earlier in the client.
 	MsgCmd = ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", "Test_in_global_var"))
 )
@@ -112,61 +111,6 @@ func tsInit(dg *discordgo.Session) {
 		dat, _ = json.Marshal(channelInfo)
 		fmt.Printf("channel [%d]: %#v\n", channelSummary.Id, string(dat))
 	}
-	go func() {
-		for {
-			time.Sleep(time.Second)
-			// Clear channel and start
-			<-TsStateInfo
-			var retString string = "```"
-			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t", "Name", "Mute Status")
-			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t\n", "----", "----")
-
-			if len(TsStateInfo) == 0 {
-				clientList, err := Client.GetClientList(Ctx)
-				if err != nil {
-					continue
-				}
-
-				for _, clientSummary := range clientList {
-					if strings.Contains(clientSummary.Nickname, "serveradmin") {
-						continue
-					}
-					clientInfo, err := Client.GetClientInfo(Ctx, clientSummary.Id)
-					if err != nil {
-						continue
-					}
-
-					var fmtNick = clientInfo.Nickname
-					if nickLen := len(fmtNick); nickLen > 15 {
-						fmtNick = fmtNick[:12] + "..."
-					}
-
-					var isMuted string
-					// Muted status checker
-					switch {
-					case clientInfo.OutputMuted:
-						isMuted = "🔇"
-					case clientInfo.InputMuted:
-						isMuted = "Mic"
-					default:
-						if clientInfo.IsTalker {
-							isMuted = "Speaking"
-						} else {
-							isMuted = "Unmuted"
-						}
-
-					}
-					var row string // Next row to print
-					row += fmt.Sprintf(" %-16s", fmtNick)
-					row += fmt.Sprintf("\t\t\t%s\n", isMuted)
-					retString += row
-				}
-				retString += "```"
-				fmt.Printf("%s", retString)
-				TsStateInfo <- retString
-			}
-		}
-	}()
 	fmt.Printf("Waiting for events.\n")
 	//if err := Client.ServerNotifyRegisterAll(Ctx); err != nil {
 	//	checkErr(err)
@@ -191,6 +135,74 @@ func tsInit(dg *discordgo.Session) {
 		fmt.Printf("reflect: %v\n", v.FieldByIndex([]int{1}))
 		fmt.Printf("message: %v\n", event) //  Example output: event: &serverquery.TextMessageReceived{TargetMode:2, Message:"a", TargetID:0, InvokerID:253, InvokerName:"orseti", InvokerUID:"Kb9cMhGIapfej2uj0r6GrSF64aQ="}
 	}
+}
+
+func discTsInfo() string {
+	newCtx := context.Background()
+	Client, err := tsConn()
+	if err != nil {
+		if err.Error() == "EOF" {
+			log.Fatalln("Teamspeak Admin Server Disconnected the client immediately.")
+		} else {
+			checkErr(err)
+		}
+	}
+
+	go Client.Run(newCtx)
+	if err := Client.UseServer(newCtx, 9987); err != nil {
+		checkErr(err)
+	}
+	if err := Client.Login(newCtx, "orseti", "oyQPiIfv"); err != nil {
+		checkErr(err)
+	}
+	// Clear channel and start
+	var retString string = "```"
+	retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t", "Name", "Mute Status")
+	retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t\n", "----", "----")
+
+	clientList, err := Client.GetClientList(newCtx)
+	if err != nil {
+		log.Println()
+	}
+
+	for _, clientSummary := range clientList {
+		if strings.Contains(clientSummary.Nickname, "serveradmin") || clientSummary.Nickname[0] == 'd' || strings.ContainsAny(clientSummary.Nickname[2:], "123456789") {
+			continue
+		}
+		clientInfo, err := Client.GetClientInfo(newCtx, clientSummary.Id)
+		if err != nil {
+			continue
+		}
+
+		var fmtNick = clientInfo.Nickname
+		if nickLen := len(fmtNick); nickLen > 15 {
+			fmtNick = fmtNick[:12] + "..."
+		}
+
+		var isMuted string
+		// Muted status checker
+		switch {
+		case clientInfo.OutputMuted:
+			isMuted = "🔇"
+		case clientInfo.InputMuted:
+			isMuted = "Mic"
+		default:
+			if clientInfo.IsTalker {
+				isMuted = "🔊 Speaking now"
+			} else {
+				isMuted = "🔊"
+			}
+
+		}
+		var row string // Next row to print
+		row += fmt.Sprintf(" %-16s", fmtNick)
+		row += fmt.Sprintf("\t\t\t%s\n", isMuted)
+		retString += row
+	}
+	retString += "```"
+	fmt.Printf("%s", retString)
+	//TsStateInfo <- retString
+	return retString
 }
 
 func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
@@ -289,7 +301,10 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		senderName := "d" + data.DiscToName[m.Author.ID]
 		senderPass := data.SQData[senderName]
 		msg := strings.Split(m.Content, " ")
-
+		if len(msg) < 3 {
+			tsPoke(senderName, senderPass, msg[1], "")
+			return
+		}
 		tsPoke(senderName, senderPass, msg[1], msg[2])
 		return
 	}
@@ -304,8 +319,8 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "tsinfo":
 		fallthrough
 	case "!tsinfo":
-		s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
-
+		msg := discTsInfo()
+		s.ChannelMessageSend(m.ChannelID, msg)
 	default:
 		senderName := data.DiscToName[m.Author.ID]
 		senderName = "d" + senderName
