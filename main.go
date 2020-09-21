@@ -38,25 +38,22 @@ var (
 )
 
 const (
-	discChannel = "665962482694750228"
+	// #general-text2 = 665962482694750228
+	// #botspam = 716760837347606568
+	discChannel = "716760837347606568"
 )
 
 func main() {
-
 	app := cli.NewApp()
 	app.Name = "discord2ts3"
 	app.Action = func(c *cli.Context) {
 		discord, err := discordgo.New("Bot " + data.DiscAuthToken)
 		checkErr(err)
-
-		wg.Add(1)
 		go discInit(discord)
-		checkErr(err)
 		wg.Add(1)
 
 		go tsInit(discord) // @TODO change to goroutine
 		wg.Add(1)
-		checkErr(err)
 
 		wg.Wait()
 	}
@@ -64,16 +61,18 @@ func main() {
 	app.RunAndExitOnError()
 }
 
-// WORKING!
-func tsSend(user, pass, msg string) error {
+// NOT WORKING!
+func discToTsSend(user, pass, msg string) error {
 	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
 	checkErr(err)
 	client.Use(1)
 	client.Login(user, pass)
-	sendTextMessage := ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", msg))
-	_, err = client.ExecCmd(sendTextMessage)
 	log.Printf("Relaying message from Discord to Teamspeak. Message Content: %s", msg)
+	sendTextMessage := ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", msg))
+	resp, err := client.ExecCmd(sendTextMessage)
+	fmt.Printf("RESPONSE OF TS TXTMSG COMMAND: %s\nERROR: %v\n", resp, err)
 	client.Logout()
+	client.Close()
 	return err
 }
 
@@ -116,7 +115,6 @@ func tsInit(dg *discordgo.Session) {
 		tsMsg := v.FieldByIndex([]int{1})
 		findSender := v.FieldByIndex([]int{5})
 
-		fmt.Println(findSender.String())
 		tsSender := data.TsToName[findSender.String()]
 		if tsSender == "" {
 			continue
@@ -126,7 +124,7 @@ func tsInit(dg *discordgo.Session) {
 			log.Printf("ERROR attempted to relay ts message to discord: \"%s\"", err)
 			continue
 		}
-		fmt.Printf("reflect: %s\n", v.FieldByIndex([]int{1}))
+		fmt.Printf("Message: %s\n", v.FieldByIndex([]int{1}))
 	}
 }
 
@@ -200,7 +198,7 @@ func discTsInfo() string {
 
 func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 	// Using general-text2 as channel for now
-
+	defer fmt.Printf("Message Sent from Ts to Discord: %s", msg)
 	for _, value := range data.DiscToName {
 		if value == name {
 			if strings.Contains(msg, "@") {
@@ -363,7 +361,10 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		senderName := data.DiscToName[m.Author.ID]
 		senderName = "d" + senderName
 		senderPass := data.SQData[senderName]
-		tsSend(senderName, senderPass, m.Content)
+		err := discToTsSend(senderName, senderPass, m.Content)
+		if err != nil {
+			fmt.Printf("ERROR IN SENDING TS MESSAGE: %s", err)
+		}
 		return
 	}
 }
