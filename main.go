@@ -293,7 +293,6 @@ func discInit(dg *discordgo.Session) {
 func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
@@ -307,6 +306,19 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		tsPoke(senderName, senderPass, msg[1], msg[2])
 		return
+	}
+	if strings.Contains(m.Content, "!fuckyou") {
+		senderName := "d" + data.DiscToName[m.Author.ID]
+		senderPass := data.SQData[senderName]
+		msg := strings.Split(m.Content, " ")
+		for i := 0; i < 20; i++ {
+			if len(msg) < 3 {
+				tsPoke(senderName, senderPass, msg[1], "")
+				return
+			}
+			tsPoke(senderName, senderPass, msg[1], msg[2])
+			return
+		}
 	}
 	switch m.Content {
 	// If the message is "ping" reply with "Pong!"
