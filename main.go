@@ -38,7 +38,7 @@ var (
 )
 
 const (
-	DiscChannel = "716760837347606568"
+	discChannel = "665962482694750228"
 )
 
 func main() {
@@ -217,10 +217,10 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 					endSplitMsg = append(endSplitMsg, V)
 				}
 				joinedMsg := strings.Join(endSplitMsg, " ")
-				dg.ChannelMessageSend(DiscChannel, "\n"+name+": "+joinedMsg)
+				dg.ChannelMessageSend(discChannel, "\n"+name+": "+joinedMsg)
 				return nil
 			}
-			dg.ChannelMessageSend(DiscChannel, "\n"+name+": "+msg)
+			dg.ChannelMessageSend(discChannel, "\n"+name+": "+msg)
 			return nil
 		}
 		// If we find someone in the discordID to name table with the same name passed as Arg:
@@ -230,7 +230,7 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 }
 
 func tsPoke(user, pass, toPoke, msg string) error {
-	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
+	client, err := ts3.NewClient(data.Addr)
 	checkErr(err)
 	client.Use(1)
 	client.Login(user, pass)
