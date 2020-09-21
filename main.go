@@ -194,9 +194,27 @@ func discTsInfo() string {
 
 func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 	// Using general-text2 as channel for now
+
 	discChan := "665962482694750228"
 	for _, value := range data.DiscToName {
 		if value == name {
+			if strings.Contains(msg, "@") {
+				var endSplitMsg []string
+				splitMsg := strings.Split(msg, " ")
+				for _, V := range splitMsg {
+					if strings.Contains(V, "@") {
+						for id, name := range data.DiscToName {
+							if name == V[1:] {
+								V = "<@" + id + ">"
+							}
+						}
+					}
+					endSplitMsg = append(endSplitMsg, V)
+				}
+				joinedMsg := strings.Join(endSplitMsg, " ")
+				dg.ChannelMessageSend(discChan, "\n"+name+": "+joinedMsg)
+				return nil
+			}
 			dg.ChannelMessageSend(discChan, "\n"+name+": "+msg)
 			return nil
 		}
