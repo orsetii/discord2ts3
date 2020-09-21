@@ -115,9 +115,10 @@ func tsInit(dg *discordgo.Session) {
 	go func() {
 		for {
 			time.Sleep(time.Second)
-			// If Channel empty
+			// Clear channel and start
+			<-TsStateInfo
 			var retString string = "```"
-			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t", "Name", "AFK")
+			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t", "Name", "Mute Status")
 			retString += fmt.Sprintf("\n %s\t\t\t\t\t\t%s\t\n", "----", "----")
 
 			if len(TsStateInfo) == 0 {
@@ -134,17 +135,30 @@ func tsInit(dg *discordgo.Session) {
 					if err != nil {
 						continue
 					}
-					var isIdle string = "No"
-					if clientInfo.ClientIdleTime > 30000 {
-						isIdle = "Yes"
-					}
+
 					var fmtNick = clientInfo.Nickname
 					if nickLen := len(fmtNick); nickLen > 15 {
 						fmtNick = fmtNick[:12] + "..."
 					}
+
+					var isMuted string
+					// Muted status checker
+					switch {
+					case clientInfo.OutputMuted:
+						isMuted = "🔇"
+					case clientInfo.InputMuted:
+						isMuted = "Mic"
+					default:
+						if clientInfo.IsTalker {
+							isMuted = "Speaking"
+						} else {
+							isMuted = "Unmuted"
+						}
+
+					}
 					var row string // Next row to print
 					row += fmt.Sprintf(" %-16s", fmtNick)
-					row += fmt.Sprintf("\t\t\t%s\n", isIdle)
+					row += fmt.Sprintf("\t\t\t%s\n", isMuted)
 					retString += row
 				}
 				retString += "```"
