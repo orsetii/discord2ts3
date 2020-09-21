@@ -72,7 +72,7 @@ func tsSend(user, pass, msg string) error {
 	client.Login(user, pass)
 	sendTextMessage := ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", msg))
 	_, err = client.ExecCmd(sendTextMessage)
-	log.Printf("\nText Message Sent to Teamspeak from Discord. Message Content: %s", msg)
+	log.Printf("Relaying message from Discord to Teamspeak. Message Content: %s", msg)
 	client.Logout()
 	return err
 }
@@ -115,12 +115,15 @@ func tsInit(dg *discordgo.Session) {
 		// Now get Message and user id of sender
 		tsMsg := v.FieldByIndex([]int{1})
 		findSender := v.FieldByIndex([]int{5})
+
 		fmt.Println(findSender.String())
 		tsSender := data.TsToName[findSender.String()]
-
+		if tsSender == "" {
+			continue
+		}
 		err := tsToDiscSend(dg, tsSender, tsMsg.String())
 		if err != nil {
-			log.Printf("ERROR attempted to relay ts message to discord: %s", err)
+			log.Printf("ERROR attempted to relay ts message to discord: \"%s\"", err)
 			continue
 		}
 		fmt.Printf("reflect: %s\n", v.FieldByIndex([]int{1}))
@@ -363,7 +366,6 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		tsSend(senderName, senderPass, m.Content)
 		return
 	}
-
 }
 
 func checkErr(err error) {
