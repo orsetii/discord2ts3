@@ -1,0 +1,1 @@
+servergroupaddclient adds a client to a group with group id by `sgid=groupid` and then `clientdbid=dbid` for the client to add's database id.

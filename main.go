@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -32,8 +34,8 @@ var (
 	Client *sq.ServerQueryAPI
 	//TsStateInfo is a channel used to monitor who is in discord when called.
 	TsStateInfo = make(chan string, 10)
-	// TS command to send message. Able to specify message but user needs to be done earlier in the client.
-	MsgCmd = ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", "Test1")) // TODO add
+	// MsgCmd is a TS command to send message. Able to specify message but user needs to be done earlier in the client.
+	MsgCmd = ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", "Test_in_global_var"))
 )
 
 func main() {
@@ -49,7 +51,7 @@ func main() {
 		checkErr(err)
 		wg.Add(1)
 
-		tsInit()
+		tsInit(discord) // @TODO change to goroutine
 		wg.Add(1)
 		checkErr(err)
 
@@ -59,15 +61,15 @@ func main() {
 	app.RunAndExitOnError()
 }
 
-// TODO add so can send as x user, taking in user as an arg.
-func tsSend(msg string) error {
+// WORKING!
+func tsSend(user, pass, msg string) error {
 	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
 	checkErr(err)
 	client.Use(1)
-	client.Login(tsUser, tsPass)
+	client.Login(user, pass)
 	sendTextMessage := ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", msg))
 	ret, err := client.ExecCmd(sendTextMessage)
-	fmt.Printf("\nALERT:\n%#v\n%#v\n", ret, err)
+	fmt.Printf("\nALERT:\n%v\n%v\n", ret, err)
 	client.Logout()
 	return err
 }
@@ -76,7 +78,7 @@ func tsConn() (*sq.ServerQueryAPI, error) {
 	return sq.Dial(data.Addr)
 }
 
-func tsInit() {
+func tsInit(dg *discordgo.Session) {
 
 	Ctx := context.Background()
 	Client, err := tsConn()
@@ -152,27 +154,94 @@ func tsInit() {
 		}
 	}()
 	fmt.Printf("Waiting for events.\n")
-	if err := Client.ServerNotifyRegisterAll(Ctx); err != nil {
-		checkErr(err)
-	}
-
+	//if err := Client.ServerNotifyRegisterAll(Ctx); err != nil {
+	//	checkErr(err)
+	//}
+	err = Client.ServerNotifyRegister(Ctx, "textchannel", 1)
+	log.Println(err)
 	events := Client.Events()
 	for event := range events {
-		fmt.Printf("event: %#v\n", event)
+		v := reflect.ValueOf(event).Elem()
+
+		// Now get Message and user id of sender
+		tsMsg := v.FieldByIndex([]int{1})
+		findSender := v.FieldByIndex([]int{5})
+		fmt.Println(findSender.String())
+		tsSender := data.TsToName[findSender.String()]
+
+		err := tsToDiscSend(dg, tsSender, tsMsg.String())
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		fmt.Printf("reflect: %v\n", v.FieldByIndex([]int{1}))
+		fmt.Printf("message: %v\n", event) //  Example output: event: &serverquery.TextMessageReceived{TargetMode:2, Message:"a", TargetID:0, InvokerID:253, InvokerName:"orseti", InvokerUID:"Kb9cMhGIapfej2uj0r6GrSF64aQ="}
 	}
+}
+
+func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
+	// Using general-text2 as channel for now
+	discChan := "665962482694750228"
+	for _, value := range data.DiscToName {
+		if value == name {
+			dg.ChannelMessageSend(discChan, "\n"+name+": "+msg)
+			return nil
+		}
+		// If we find someone in the discordID to name table with the same name passed as Arg:
+
+	}
+	return fmt.Errorf("%s not found in DiscordIDDatabase", name)
+}
+
+func tsPoke(user, pass, toPoke, msg string) error { // TODO cut out the !poke and the name
+	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
+	checkErr(err)
+	client.Use(1)
+	client.Login(user, pass)
+	// Get online clients via ClientList()
+	// Find Client in ClientDBList
+	// Get UID of client from that DBList
+	//
+	clientList, err := client.Server.ClientList()
+	clientDBList, err := client.Server.ClientDBList()
+	if err != nil {
+		return err
+	}
+	ChanToPoke := make(chan int, 1)
+
+	for _, person := range clientDBList {
+		if data.TsToName[person.UniqueIdentifier] == toPoke { // If the user passed to us is found in the database:
+			for _, personClientInfo := range clientList {
+				if person.Nickname == personClientInfo.Nickname { // If we DO have a match between dbinfo and clientinfo
+					getCLID := ts3.NewCmd("clientgetids ").WithArgs(ts3.NewArg("cluid", person.UniqueIdentifier))
+					ret, err := client.ExecCmd(getCLID)
+					if err != nil {
+						return err
+					}
+					startOfClid := len(person.UniqueIdentifier) + 12
+					ToPokeID, err := strconv.Atoi(ret[0][startOfClid : startOfClid+3])
+					if err != nil {
+						return err
+					}
+					ChanToPoke <- ToPokeID
+					break
+				}
+			}
+		}
+	}
+	msg = user[1:] + " poked you from discord: " + msg
+	sendPoke := ts3.NewCmd("clientpoke ").WithArgs(ts3.NewArg("clid", <-ChanToPoke), ts3.NewArg("msg", msg))
+	ret, err := client.ExecCmd(sendPoke)
+	fmt.Printf("\nPOKED:\n%v\n%v\n", ret, err)
+	client.Logout()
+	return err
 }
 
 func discInit(dg *discordgo.Session) {
 
-	/* // Init Second sq Client for messages
-	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
-	checkErr(err)
-	client.Use(1)
-	client.Login(tsUser, tsPass)*/
 	// Register the discSend func as a callback for MessageCreate events.
 	dg.AddHandler(discMsgHandle)
 
-	tsSend("Test123")
 	// In this example, we only care about receiving message events.
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages)
 
@@ -193,15 +262,6 @@ func discInit(dg *discordgo.Session) {
 	wg.Done()
 }
 
-//TODO CHANGE THIS TO BE A FUNCTION TO RECEIVE MESSAGES
-// func (c *Client) RegisterChannel(id uint) error {
-// 	_, err := c.ExecCmd(NewCmd("servernotifyregister").WithArgs(
-// 		NewArg("event", ChannelEvents),
-// 		NewArg("id", id),
-// 	))
-// 	return err
-// }
-
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the authenticated bot has access to.
 func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -209,6 +269,14 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	if strings.Contains(m.Content, "!poke") {
+		senderName := "d" + data.DiscToName[m.Author.ID]
+		senderPass := data.SQData[senderName]
+		msg := strings.Split(m.Content, " ")
+
+		tsPoke(senderName, senderPass, msg[1], msg[2])
 		return
 	}
 	switch m.Content {
@@ -223,33 +291,15 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fallthrough
 	case "!tsinfo":
 		s.ChannelMessageSend(m.ChannelID, <-TsStateInfo)
+
 	default:
-		// TODO here is ALL messages that dont have a command associated with them.
-		//_, err := Client.ExecuteCommand(Ctx, &sq.UseCommand())
-		//err := Client.SendTextMessage(Ctx, 1, 0, "hello")
-		//a := new(sq.ServerQueryReadWriter)
-		//checkErr(err)
-		msg := m.Author.Username + ": " + m.Content
-		tsSend(msg)
+		senderName := data.DiscToName[m.Author.ID]
+		senderName = "d" + senderName
+		senderPass := data.SQData[senderName]
+		tsSend(senderName, senderPass, m.Content)
 		return
 	}
 
-}
-
-// UseCommand is the use command.
-type UseCommand struct {
-	// Port is the server to use.
-	Port int `serverquery:"port"`
-}
-
-// GetResponseType returns an instance of the response type.
-func (c *UseCommand) GetResponseType() interface{} {
-	return nil
-}
-
-// GetCommandName returns the name of the command.
-func (c *UseCommand) GetCommandName() string {
-	return "use"
 }
 
 func checkErr(err error) {
