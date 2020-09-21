@@ -37,6 +37,10 @@ var (
 	MsgCmd = ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", "Test_in_global_var"))
 )
 
+const (
+	DiscChannel = "716760837347606568"
+)
+
 func main() {
 
 	app := cli.NewApp()
@@ -50,7 +54,7 @@ func main() {
 		checkErr(err)
 		wg.Add(1)
 
-		tsInit(discord) // @TODO change to goroutine
+		go tsInit(discord) // @TODO change to goroutine
 		wg.Add(1)
 		checkErr(err)
 
@@ -116,7 +120,7 @@ func tsInit(dg *discordgo.Session) {
 
 		err := tsToDiscSend(dg, tsSender, tsMsg.String())
 		if err != nil {
-			log.Printf("Error in relaying ts message to discord: %s", err)
+			log.Printf("ERROR attempted to relay ts message to discord: %s", err)
 			continue
 		}
 		fmt.Printf("reflect: %s\n", v.FieldByIndex([]int{1}))
@@ -194,7 +198,6 @@ func discTsInfo() string {
 func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 	// Using general-text2 as channel for now
 
-	discChan := "665962482694750228"
 	for _, value := range data.DiscToName {
 		if value == name {
 			if strings.Contains(msg, "@") {
@@ -211,10 +214,10 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 					endSplitMsg = append(endSplitMsg, V)
 				}
 				joinedMsg := strings.Join(endSplitMsg, " ")
-				dg.ChannelMessageSend(discChan, "\n"+name+": "+joinedMsg)
+				dg.ChannelMessageSend(DiscChannel, "\n"+name+": "+joinedMsg)
 				return nil
 			}
-			dg.ChannelMessageSend(discChan, "\n"+name+": "+msg)
+			dg.ChannelMessageSend(DiscChannel, "\n"+name+": "+msg)
 			return nil
 		}
 		// If we find someone in the discordID to name table with the same name passed as Arg:
@@ -223,7 +226,7 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 	return fmt.Errorf("%s not found in DiscordIDDatabase", name)
 }
 
-func tsPoke(user, pass, toPoke, msg string) error { // TODO cut out the !poke and the name
+func tsPoke(user, pass, toPoke, msg string) error {
 	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
 	checkErr(err)
 	client.Use(1)
