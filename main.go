@@ -113,6 +113,15 @@ func tsInit(dg *discordgo.Session) {
 
 	go func() {
 		for {
+			go func() {
+				for {
+					time.Sleep(time.Second * 45)
+					_, err := Client.GetChannelInfo(Ctx, 1)
+					if err != nil {
+						fmt.Printf("\nError in polling command: %s", err)
+					}
+				}
+			}()
 			time.Sleep(time.Minute * 10)
 			log.Println("Restarting Connection...")
 			Client.Close()
