@@ -35,18 +35,10 @@ var (
 	TsStateInfo = make(chan string, 1)
 	// MsgCmd is a TS command to send message. Able to specify message but user needs to be done earlier in the client.
 	MsgCmd = ts3.NewCmd("sendtextmessage targetmode=2 target=1").WithArgs(ts3.NewArg("msg", "Test_in_global_var"))
-)
-
-const (
-	// #general-text2 = 665962482694750228
-	// #botspam = 716760837347606568
-	discChannel = "665962482694750228"
-)
-
-func main() {
-	app := cli.NewApp()
-	app.Name = "discord2ts3"
-	app.Action = func(c *cli.Context) {
+	// App is the cli global state of app
+	App *cli.App
+	// InitApp inits app state.
+	InitApp = func(c *cli.Context) {
 		discord, err := discordgo.New("Bot " + data.DiscAuthToken)
 		checkErr(err)
 		go discInit(discord)
@@ -57,8 +49,19 @@ func main() {
 
 		wg.Wait()
 	}
+)
 
-	app.RunAndExitOnError()
+const (
+	// #general-text2 = 665962482694750228
+	// #botspam = 716760837347606568
+	discChannel = "665962482694750228"
+)
+
+func main() {
+	App := cli.NewApp()
+	App.Name = "discord2ts3"
+	App.Action = InitApp
+	App.RunAndExitOnError()
 }
 
 // NOT WORKING!
@@ -111,12 +114,12 @@ func tsInit(dg *discordgo.Session) {
 	events := Client.Events()
 	go func() {
 		for {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
 			_, err = Client.GetChannelInfo(Ctx, 1)
 			if err != nil {
 				fmt.Println("Error in polling server connection:115:main.go")
-			} else {
-				fmt.Println("Valid Conn")
+				fmt.Println("Restarting...")
+				App.RunAndExitOnError() // is this doable?
 			}
 		}
 	}()
