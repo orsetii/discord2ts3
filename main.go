@@ -111,8 +111,13 @@ func tsInit(dg *discordgo.Session) {
 	events := Client.Events()
 	go func() {
 		for {
-			time.Sleep(time.Second * 10)
-			_, _ = Client.GetChannelInfo(Ctx, 1)
+			time.Sleep(time.Second)
+			_, err = Client.GetChannelInfo(Ctx, 1)
+			if err != nil {
+				fmt.Println("Error in polling server connection:115:main.go")
+			} else {
+				fmt.Println("Valid Conn")
+			}
 		}
 	}()
 	for event := range events {
