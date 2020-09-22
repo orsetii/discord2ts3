@@ -118,7 +118,7 @@ func tsInit(dg *discordgo.Session) {
 					time.Sleep(time.Second * 45)
 					_, err := Client.GetChannelInfo(Ctx, 1)
 					if err != nil {
-						fmt.Printf("\nError in polling command: %s", err)
+						fmt.Printf("\nError in polling command: %s",
 					}
 				}
 			}()
