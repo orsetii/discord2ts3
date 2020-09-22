@@ -103,7 +103,6 @@ func tsInit(dg *discordgo.Session) {
 	if err := Client.Login(Ctx, tsUser, tsPass); err != nil {
 		checkErr(err)
 	}
-	fmt.Println("Waiting...")
 	//if err := Client.ServerNotifyRegisterAll(Ctx); err != nil {
 	//	checkErr(err)
 	//}
@@ -111,18 +110,18 @@ func tsInit(dg *discordgo.Session) {
 	if err != nil {
 		log.Println(err)
 	}
-	events := Client.Events()
+
 	go func() {
 		for {
-			time.Sleep(time.Second * 5)
-			_, err = Client.GetChannelInfo(Ctx, 1)
-			if err != nil {
-				fmt.Println("Error in polling server connection:115:main.go")
-				fmt.Println("Restarting...")
-				App.RunAndExitOnError() // is this doable?
-			}
+			time.Sleep(time.Minute * 10)
+			log.Println("Restarting Connection...")
+			Client.Close()
+			tsInit(dg)
+			return
 		}
 	}()
+	fmt.Println("Connected to Teamspeak Server.")
+	events := Client.Events()
 	for event := range events {
 		v := reflect.ValueOf(event).Elem()
 
