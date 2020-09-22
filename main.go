@@ -52,7 +52,7 @@ func main() {
 		go discInit(discord)
 		wg.Add(1)
 
-		go tsInit(discord) // @TODO change to goroutine
+		go tsInit(discord)
 		wg.Add(1)
 
 		wg.Wait()
@@ -63,7 +63,7 @@ func main() {
 
 // NOT WORKING!
 func discToTsSend(user, pass, msg string) error {
-	client, err := ts3.NewClient(data.Addr) // @TODO PORT ALL TS FUNCTIONALITY TO ts3 package from multiplay
+	client, err := ts3.NewClient(data.Addr)
 	checkErr(err)
 	client.Use(1)
 	client.Login(user, pass)
