@@ -214,8 +214,10 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 				splitMsg := strings.Split(msg, " ")
 				for _, V := range splitMsg {
 					if strings.Contains(V, "@") {
-						for id, name := range data.DiscToName {
-							if name == V[1:] {
+						firstChar := strings.ToUpper(string(V[1]))
+						V = "@" + firstChar + V[2:]
+						for id, discName := range data.DiscToName {
+							if discName == V[1:] {
 								V = "<@" + id + ">"
 							}
 						}
@@ -341,12 +343,6 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	switch m.Content {
 	// If the message is "ping" reply with "Pong!"
-	case "ping":
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-
-		// If the message is "pong" reply with "Ping!"
-	case "pong":
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
 	case "tsinfo":
 		fallthrough
 	case "!tsinfo":
