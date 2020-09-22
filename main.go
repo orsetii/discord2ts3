@@ -40,7 +40,7 @@ var (
 const (
 	// #general-text2 = 665962482694750228
 	// #botspam = 716760837347606568
-	discChannel = "716760837347606568"
+	discChannel = "665962482694750228"
 )
 
 func main() {
@@ -81,9 +81,10 @@ func tsConn() (*sq.ServerQueryAPI, error) {
 }
 
 func tsInit(dg *discordgo.Session) {
-
 	Ctx := context.Background()
 	Client, err := tsConn()
+	defer Client.Close()
+
 	if err != nil {
 		if err.Error() == "EOF" {
 			log.Fatalln("Teamspeak Admin Server Disconnected the client immediately.")
@@ -108,6 +109,12 @@ func tsInit(dg *discordgo.Session) {
 		log.Println(err)
 	}
 	events := Client.Events()
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+			_, _ = Client.GetChannelInfo(Ctx, 1)
+		}
+	}()
 	for event := range events {
 		v := reflect.ValueOf(event).Elem()
 
@@ -125,6 +132,7 @@ func tsInit(dg *discordgo.Session) {
 			continue
 		}
 		fmt.Printf("Message: %s\n", v.FieldByIndex([]int{1}))
+		time.Sleep(time.Second)
 	}
 }
 
@@ -309,7 +317,6 @@ func discInit(dg *discordgo.Session) {
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the authenticated bot has access to.
 func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
-
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -329,20 +336,6 @@ func discMsgHandle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		log.Println("No error reported.")
 		return
-	}
-	if strings.Contains(m.Content, "!fuckyou") {
-		senderName := "d" + data.DiscToName[m.Author.ID]
-		senderPass := data.SQData[senderName]
-		msg := strings.Split(m.Content, " ")
-		for i := 0; i < 20; i++ {
-			time.Sleep(time.Millisecond * 200)
-			if len(msg) < 3 {
-				tsPoke(senderName, senderPass, msg[1], "")
-				continue
-			}
-			tsPoke(senderName, senderPass, msg[1], msg[2])
-			continue
-		}
 	}
 	switch m.Content {
 	// If the message is "ping" reply with "Pong!"
