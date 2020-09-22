@@ -222,9 +222,11 @@ func tsToDiscSend(dg *discordgo.Session, name, msg string) error {
 					}
 					endSplitMsg = append(endSplitMsg, V)
 				}
-				joinedMsg := strings.Join(endSplitMsg, " ")
-				dg.ChannelMessageSend(discChannel, "\n"+name+": "+joinedMsg)
-				return nil
+				msg = strings.Join(endSplitMsg, " ")
+			}
+			if strings.Contains(msg, "[URL]") {
+				msg = strings.Replace(msg, "[URL]", "", 1)
+				msg = strings.Replace(msg, "[/URL]", "", 1)
 			}
 			dg.ChannelMessageSend(discChannel, "\n"+name+": "+msg)
 			return nil
